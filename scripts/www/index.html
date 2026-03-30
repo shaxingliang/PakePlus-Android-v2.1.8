@@ -1,11 +1,175 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>PakePlus</title>
-    </head>
-    <body>
-        PakePlus
-    </body>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNA拷贝数双向计算器</title>
+    <style>
+        /* --- 新增：启动页样式 --- */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: white; /* 启动背景色 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999; /* 确保在最顶层 */
+            transition: opacity 0.8s ease; /* 消失时的淡出效果 */
+        }
+
+        #splash-screen img {
+            max-width: 80%;
+            max-height: 70%;
+            object-fit: contain;
+        }
+
+        /* 隐藏滚动条直到启动页消失 */
+        body.loading {
+            overflow: hidden;
+        }
+
+        /* --- 原始网页样式 (保持不变) --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f5f7fa; color: #333; line-height: 1.6; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background-color: white; border-radius: 10px; box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); overflow: hidden; }
+        header { background: linear-gradient(135deg, #2c3e50, #4a6491); color: white; padding: 30px; text-align: center; }
+        h1 { font-size: 2.2rem; margin-bottom: 10px; }
+        .subtitle { font-size: 1.1rem; opacity: 0.9; }
+        .content { display: flex; flex-wrap: wrap; padding: 20px; }
+        .input-section { flex: 1; min-width: 300px; padding: 20px; border-right: 1px solid #eee; }
+        .result-section { flex: 1; min-width: 300px; padding: 20px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; }
+        input[type="number"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; transition: border 0.3s; }
+        .calculate-btn { background-color: #4a6491; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 600; width: 100%; transition: background-color 0.3s; margin-bottom: 10px; }
+        .btn-ct-to-copy { background-color: #4a6491; }
+        .btn-copy-to-ct { background-color: #2c7873; }
+        .result-box { background-color: #f8f9fa; border-radius: 5px; padding: 20px; margin-top: 20px; border-left: 4px solid #4a6491; }
+        .result-ct-box { border-left: 4px solid #2c7873; }
+        .result-value { font-size: 2rem; font-weight: 700; color: #2c3e50; text-align: center; margin: 15px 0; }
+        .copy-number { font-size: 1.5rem; color: #4a6491; text-align: center; margin: 10px 0; word-break: break-all; }
+        .ct-value { font-size: 1.5rem; color: #2c7873; text-align: center; margin: 10px 0; }
+        .info-box { background-color: #e8f4f8; border-radius: 5px; padding: 15px; margin-top: 20px; font-size: 0.9rem; }
+        .formula { text-align: center; margin: 20px 0; font-size: 1.2rem; font-weight: 600; color: #2c3e50; }
+        .example { background-color: #f0f7ff; border-radius: 5px; padding: 15px; margin-top: 20px; font-size: 0.9rem; }
+        .calculation-type { margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; }
+        footer { text-align: center; padding: 20px; color: #666; font-size: 0.9rem; border-top: 1px solid #eee; }
+        @media (max-width: 768px) { .input-section { border-right: none; border-bottom: 1px solid #eee; } }
+    </style>
+</head>
+<body class="loading">
+
+    <div id="splash-screen">
+        <img src="图片1.jpg" alt="无限可能">
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>DNA拷贝数双向计算器</h1>
+            <p class="subtitle">通过实时荧光PCR标准曲线方程实现Ct值与拷贝数的双向推算</p>
+        </header>
+        
+        <div class="content">
+            <div class="input-section">
+                <h2>标准曲线参数</h2>
+                <div class="formula">Y = mX + b</div>
+                
+                <div class="form-group">
+                    <label for="slope">标准曲线斜率 (m)</label>
+                    <input type="number" id="slope" step="any" value="-3.228">
+                </div>
+                
+                <div class="form-group">
+                    <label for="intercept">标准曲线截距 (b)</label>
+                    <input type="number" id="intercept" step="any" value="39.85">
+                </div>
+                
+                <div class="calculation-type">
+                    <h3>计算方式一：Ct值推算拷贝数</h3>
+                    <div class="form-group">
+                        <label for="y-value">Y值 (Ct值)</label>
+                        <input type="number" id="y-value" step="any" placeholder="输入Ct值">
+                    </div>
+                    <button class="calculate-btn btn-ct-to-copy" id="calculate-ct-to-copy">根据Ct值计算拷贝数</button>
+                </div>
+                
+                <div class="calculation-type">
+                    <h3>计算方式二：拷贝数推算Ct值</h3>
+                    <div class="form-group">
+                        <label for="initial-copy">初始DNA拷贝数</label>
+                        <input type="number" id="initial-copy" step="any" placeholder="输入DNA拷贝数">
+                    </div>
+                    <button class="calculate-btn btn-copy-to-ct" id="calculate-copy-to-ct">根据拷贝数计算Ct值</button>
+                </div>
+            </div>
+            
+            <div class="result-section">
+                <h2>计算结果</h2>
+                <div class="result-box" id="ct-to-copy-result">
+                    <h3>Ct值推算拷贝数结果</h3>
+                    <p>X值 (log<sub>10</sub>拷贝数): <span class="result-value" id="x-value">--</span></p>
+                    <p>DNA拷贝数: <div class="copy-number" id="copy-number">--</div></p>
+                </div>
+                
+                <div class="result-box result-ct-box" id="copy-to-ct-result">
+                    <h3>拷贝数推算Ct值结果</h3>
+                    <p>计算得到的Ct值 (Y值): <div class="result-value" id="y-result">--</div></p>
+                    <p>对应的log<sub>10</sub>(拷贝数): <span class="ct-value" id="log-copy">--</span></p>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>DNA拷贝数双向计算器 - 用于实时荧光PCR数据分析</p>
+        </footer>
+    </div>
+
+    <script>
+        // --- 新增：控制启动页消失的逻辑 ---
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                const splash = document.getElementById('splash-screen');
+                splash.style.opacity = '0'; // 开始淡出
+                document.body.classList.remove('loading'); // 允许滚动
+                
+                setTimeout(() => {
+                    splash.style.display = 'none'; // 完全移除
+                }, 800); // 这里的 800ms 对应 CSS 中的 transition 时间
+            }, 2000); // 2000ms = 2秒
+        });
+
+        // --- 原始计算逻辑 ---
+        document.getElementById('calculate-ct-to-copy').addEventListener('click', function() {
+            const yValue = parseFloat(document.getElementById('y-value').value);
+            const slope = parseFloat(document.getElementById('slope').value);
+            const intercept = parseFloat(document.getElementById('intercept').value);
+            if (isNaN(yValue) || isNaN(slope) || isNaN(intercept)) { alert('请输入有效的数值！'); return; }
+            const xValue = (yValue - intercept) / slope;
+            const copyNumber = Math.pow(10, xValue);
+            document.getElementById('x-value').textContent = xValue.toFixed(4);
+            if (copyNumber >= 1000000) {
+                document.getElementById('copy-number').textContent = copyNumber.toLocaleString('en-US', {maximumFractionDigits: 0});
+            } else if (copyNumber >= 1) {
+                document.getElementById('copy-number').textContent = copyNumber.toFixed(2);
+            } else {
+                document.getElementById('copy-number').textContent = copyNumber.toExponential(4);
+            }
+        });
+        
+        document.getElementById('calculate-copy-to-ct').addEventListener('click', function() {
+            const initialCopy = parseFloat(document.getElementById('initial-copy').value);
+            const slope = parseFloat(document.getElementById('slope').value);
+            const intercept = parseFloat(document.getElementById('intercept').value);
+            if (isNaN(initialCopy) || isNaN(slope) || isNaN(intercept)) { alert('请输入有效的数值！'); return; }
+            const xValue = Math.log10(initialCopy);
+            const yValue = slope * xValue + intercept;
+            document.getElementById('y-result').textContent = yValue.toFixed(4);
+            document.getElementById('log-copy').textContent = xValue.toFixed(4);
+        });
+    </script>
+</body>
 </html>

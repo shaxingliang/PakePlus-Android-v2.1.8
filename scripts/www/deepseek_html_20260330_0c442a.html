@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Ct值→DNA拷贝数计算器</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Roboto, sans-serif;
+        }
+        
+        body {
+            background-color: #f0f2f8;
+            color: #1a2c3e;
+            line-height: 1.5;
+            padding: 16px;
+        }
+        
+        /* 手机App风格卡片容器 */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 28px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c5c, #2b4b72);
+            color: white;
+            padding: 28px 20px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            font-size: 0.95rem;
+            opacity: 0.88;
+            font-weight: 400;
+        }
+        
+        .content {
+            padding: 24px 20px 28px;
+        }
+        
+        /* 主要参数卡片 */
+        .param-card {
+            background-color: #f9fafc;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 28px;
+            border: 1px solid #eef2f8;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1e3c5c;
+            font-size: 0.9rem;
+        }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 16px;
+            background-color: white;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: #0f2b3f;
+        }
+        
+        input[type="number"]:focus {
+            border-color: #2b4b72;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(43, 75, 114, 0.15);
+        }
+        
+        /* 主要计算按钮 */
+        .calculate-btn {
+            background: linear-gradient(95deg, #2b4b72, #1e3c5c);
+            color: white;
+            border: none;
+            padding: 16px 20px;
+            border-radius: 60px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 700;
+            width: 100%;
+            transition: all 0.25s;
+            margin: 12px 0 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            letter-spacing: 0.5px;
+        }
+        
+        .calculate-btn:hover {
+            background: linear-gradient(95deg, #1e3c5c, #143048);
+            transform: scale(0.98);
+        }
+        
+        .calculate-btn:active {
+            transform: scale(0.97);
+        }
+        
+        /* 结果区域卡片 */
+        .result-box {
+            background: linear-gradient(115deg, #f9fbfd 0%, #ffffff 100%);
+            border-radius: 24px;
+            padding: 24px 20px;
+            margin-top: 20px;
+            border: 1px solid #e9edf2;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+        
+        .result-box h3 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #1e3c5c;
+            margin-bottom: 16px;
+            border-left: 4px solid #2b4b72;
+            padding-left: 14px;
+        }
+        
+        .result-row {
+            background: #f1f5f9;
+            border-radius: 18px;
+            padding: 16px;
+            margin-bottom: 18px;
+        }
+        
+        .result-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+            color: #4a627a;
+            margin-bottom: 6px;
+        }
+        
+        .result-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #1a4c7a;
+            word-break: break-word;
+            line-height: 1.2;
+        }
+        
+        .copy-number-box {
+            background: #eef3fc;
+            border-radius: 18px;
+            padding: 18px;
+            text-align: center;
+            margin-top: 10px;
+        }
+        
+        .copy-number {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #1a5d8f;
+            word-break: break-all;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 24px;
+            font-family: 'SF Mono', monospace;
+            letter-spacing: 0.3px;
+            margin-top: 8px;
+            border: 1px solid #cbdde9;
+        }
+        
+        .explanation {
+            margin-top: 28px;
+            background-color: #f8fafd;
+            border-radius: 20px;
+            padding: 20px;
+            font-size: 0.85rem;
+            color: #2c4c6c;
+            border-left: 3px solid #9bb7d0;
+        }
+        
+        .explanation ul {
+            margin-left: 20px;
+            margin-top: 8px;
+        }
+        
+        .explanation li {
+            margin: 8px 0;
+        }
+        
+        .info-tip {
+            background: #eef2fa;
+            border-radius: 16px;
+            padding: 14px 18px;
+            margin-top: 20px;
+            font-size: 0.85rem;
+            color: #2c4a6e;
+        }
+        
+        .formula-inline {
+            font-family: monospace;
+            background: #e2e8f0;
+            padding: 4px 10px;
+            border-radius: 40px;
+            display: inline-block;
+            font-weight: 600;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.75rem;
+            color: #7c8b9c;
+            border-top: 1px solid #eef2f8;
+            background: white;
+        }
+        
+        /* 移除不需要的区块，所有多余UI已清除 */
+        .hidden-section {
+            display: none;
+        }
+        
+        /* 手机触摸优化 */
+        button, input[type="number"] {
+            touch-action: manipulation;
+        }
+        
+        @media (max-width: 480px) {
+            .result-value {
+                font-size: 1.8rem;
+            }
+            .copy-number {
+                font-size: 1.3rem;
+            }
+            .content {
+                padding: 18px 16px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>🧬 Ct值 → 拷贝数</h1>
+        <p class="subtitle">基于实时荧光PCR标准曲线 | 单向精准推算</p>
+    </header>
+
+    <div class="content">
+        <!-- 标准曲线参数输入区 -->
+        <div class="param-card">
+            <div style="text-align: center; margin-bottom: 12px;">
+                <span class="formula-inline">Y = m·X + b</span>
+                <span style="font-size: 0.8rem; margin-left: 8px;">(X = log₁₀拷贝数)</span>
+            </div>
+            <div class="form-group">
+                <label>📉 斜率 (m) <span style="font-weight:normal;">(通常 -3.1 ~ -3.6)</span></label>
+                <input type="number" id="slope" step="any" placeholder="例：-3.228" value="-3.228">
+            </div>
+            <div class="form-group">
+                <label>📈 截距 (b)</label>
+                <input type="number" id="intercept" step="any" placeholder="例：39.85" value="39.85">
+            </div>
+        </div>
+
+        <!-- 核心计算区：Ct值推算拷贝数 -->
+        <div class="param-card" style="background: white; border: 1px solid #e2edf7;">
+            <h3 style="font-size: 1.3rem; margin-bottom: 16px; color: #1e4668;">🔬 输入 Ct 值</h3>
+            <div class="form-group">
+                <label for="y-value">循环阈值 (Ct值) <span style="font-weight:normal;">(Y值)</span></label>
+                <input type="number" id="y-value" step="any" placeholder="请输入荧光PCR的Ct值" value="">
+            </div>
+            <button class="calculate-btn" id="calculate-ct-to-copy">⚡ 计算 DNA 拷贝数</button>
+        </div>
+
+        <!-- 结果显示区（仅保留Ct→拷贝数结果） -->
+        <div class="result-box" id="ct-to-copy-result">
+            <h3>📊 推算结果</h3>
+            <div class="result-row">
+                <div class="result-label">log₁₀(拷贝数) &nbsp; (X值)</div>
+                <div class="result-value" id="x-value">—</div>
+            </div>
+            <div class="copy-number-box">
+                <div class="result-label" style="margin-bottom: 6px;">🧬 初始 DNA 拷贝数</div>
+                <div class="copy-number" id="copy-number">—</div>
+                <div style="font-size: 0.7rem; color: #5f7f9f; margin-top: 10px;">※ 拷贝数 = 10^{X}</div>
+            </div>
+        </div>
+
+        <!-- 公式说明 + 使用指南（保留专业背景） -->
+        <div class="explanation">
+            <strong>📖 计算原理</strong>
+            <p style="margin-top: 8px;">标准曲线方程：<strong>Y = m·X + b</strong><br>
+            其中 Y = Ct值，X = log₁₀(初始DNA拷贝数)，m = 斜率，b = 截距。</p>
+            <p>➜ 已知Ct值，通过公式 <strong>X = (Ct - b) / m</strong> 得到X，再计算 <strong>拷贝数 = 10^{X}</strong>。</p>
+            <ul style="margin-top: 12px;">
+                <li>✅ 斜率 (m) 反映扩增效率，理想范围 -3.1 至 -3.6 (效率90%~110%)</li>
+                <li>✅ Ct值越小，初始模板拷贝数越高</li>
+                <li>✅ 本工具专用于<strong> Ct值 → 拷贝数 </strong>单向计算，界面专为手机操作优化</li>
+            </ul>
+        </div>
+
+        <div class="info-tip">
+            💡 <strong>典型参数示例</strong><br>
+            若标准曲线方程为 Y = -3.228 X + 39.85，<br>
+            Ct值 = 25.0  →  log₁₀拷贝数 ≈ 4.6016  →  拷贝数 ≈ <strong>39,954</strong> (约4.0×10⁴)<br>
+            Ct值 = 28.0  →  拷贝数 ≈ 6,309<br>
+            <span style="font-size:0.75rem;">※ 实际拷贝数依具体实验参数为准，输入您自己的标准曲线即可。</span>
+        </div>
+    </div>
+
+    <footer>
+        DNA拷贝数计算器 · Ct值推导模块<br>仅供科研参考，请结合实验标准曲线使用
+    </footer>
+</div>
+
+<script>
+    (function() {
+        // 仅保留 Ct 值 → 拷贝数 的核心逻辑
+        const slopeInput = document.getElementById('slope');
+        const interceptInput = document.getElementById('intercept');
+        const ctInput = document.getElementById('y-value');
+        const calcBtn = document.getElementById('calculate-ct-to-copy');
+        
+        // 显示元素
+        const xValueSpan = document.getElementById('x-value');
+        const copyNumberSpan = document.getElementById('copy-number');
+        
+        // 辅助：格式化数字（人性化显示，兼顾极大极小值）
+        function formatCopyNumber(copyNum) {
+            if (isNaN(copyNum) || !isFinite(copyNum)) return '无效数值';
+            if (copyNum === 0) return '0';
+            
+            // 对于极大值（超过1亿）或极小值但又不是极小数，仍保留常规显示，避免科学计数法混乱
+            if (copyNum >= 1e6) {
+                // 大于百万使用整数千位分隔符
+                return Math.round(copyNum).toLocaleString('en-US');
+            } else if (copyNum >= 1) {
+                // 1 到 1百万之间，保留最多2位小数，但如果是整数则显示整数形式
+                if (Number.isInteger(copyNum) || Math.abs(copyNum - Math.round(copyNum)) < 1e-8) {
+                    return Math.round(copyNum).toLocaleString('en-US');
+                } else {
+                    // 保留两位小数，但去除末尾无意义的0
+                    return parseFloat(copyNum.toFixed(2)).toLocaleString('en-US');
+                }
+            } else if (copyNum > 0 && copyNum < 1) {
+                // 小于1的拷贝数 (理论上拷贝数应≥1，但实验极端低可能<1, 用科学计数法更清晰)
+                if (copyNum < 1e-4) {
+                    return copyNum.toExponential(4);
+                } else {
+                    return copyNum.toFixed(6).replace(/\.?0+$/, '');
+                }
+            } else {
+                return copyNum.toExponential(4);
+            }
+        }
+        
+        // 核心计算：Ct值 → 拷贝数
+        function computeCopyNumberFromCt() {
+            // 获取原始值
+            let slope = parseFloat(slopeInput.value);
+            let intercept = parseFloat(interceptInput.value);
+            let ct = parseFloat(ctInput.value);
+            
+            // 验证输入有效性
+            if (isNaN(slope) || isNaN(intercept) || isNaN(ct)) {
+                alert('❌ 请完整填写斜率、截距和Ct值（数值格式）');
+                return;
+            }
+            
+            if (slope === 0) {
+                alert('⚠️ 斜率不能为零，请检查标准曲线参数');
+                return;
+            }
+            
+            // 公式：X = (Ct - b) / m
+            const xValue = (ct - intercept) / slope;
+            
+            // 计算拷贝数 = 10^X
+            let copyNumber;
+            try {
+                copyNumber = Math.pow(10, xValue);
+            } catch (err) {
+                alert('计算溢出，请检查输入数值是否合理');
+                return;
+            }
+            
+            if (!isFinite(copyNumber) || isNaN(copyNumber)) {
+                alert('计算结果超出有效范围，请核实斜率/截距/Ct值');
+                return;
+            }
+            
+            // 显示 X 值 (log10拷贝数)，保留4位小数
+            xValueSpan.textContent = xValue.toFixed(4);
+            
+            // 显示拷贝数 (根据数值范围智能格式化)
+            copyNumberSpan.textContent = formatCopyNumber(copyNumber);
+        }
+        
+        // 绑定按钮事件
+        calcBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            computeCopyNumberFromCt();
+        });
+        
+        // 增加键盘友好: 在Ct输入框按回车触发计算
+        ctInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                computeCopyNumberFromCt();
+            }
+        });
+        
+        // 页面加载时可选默认示例演示（但不自动计算，保持干净初始状态）
+        // 用户可手动点击按钮。保留占位符 “--”
+        // 确保界面没有遗留任何双向或拷贝数转Ct的残余代码
+    })();
+</script>
+</body>
+</html>

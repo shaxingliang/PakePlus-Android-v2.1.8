@@ -1,11 +1,216 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>PakePlus</title>
-    </head>
-    <body>
-        PakePlus
-    </body>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>荧光图像批量分析工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
+    <style>
+        /* --- 启动页样式 --- */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease;
+        }
+        #splash-screen img {
+            max-width: 80%;
+            max-height: 70%;
+            object-fit: contain;
+        }
+        body.loading {
+            overflow: hidden; /* 防止启动时出现滚动条 */
+        }
+
+        /* --- 原始分析工具样式 --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f5f7fa; color: #333; line-height: 1.6; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background-color: white; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); overflow: hidden; }
+        header { background: linear-gradient(135deg, #2c3e50, #4a6491); color: white; padding: 30px; text-align: center; }
+        h1 { font-size: 2.2rem; margin-bottom: 10px; }
+        .content { padding: 30px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; }
+        input[type="file"] { width: 100%; padding: 10px; border: 2px dashed #ddd; border-radius: 5px; background: #fafafa; cursor: pointer; }
+        .calculate-btn { background-color: #4a6491; color: white; border: none; padding: 15px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 600; width: 100%; transition: background-color 0.3s; margin-top: 10px; }
+        .calculate-btn:hover { background-color: #3a5479; }
+        .calculate-btn:disabled { background-color: #ccc; cursor: not-allowed; }
+        #status { margin-top: 20px; padding: 15px; border-radius: 5px; display: none; text-align: center; font-weight: bold; }
+        .success { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+        .processing { background-color: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; }
+        .error-log { margin-top: 20px; background-color: #ffebee; color: #c62828; padding: 15px; border-radius: 5px; border-left: 4px solid #c62828; display: none; word-wrap: break-word; }
+        .results-container { margin-top: 30px; display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f8f9fa; color: #2c3e50; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .summary-row { font-weight: bold; background-color: #eef2f7 !important; color: #1565c0; }
+        .info-box { background-color: #e8f4f8; border-radius: 5px; padding: 15px; margin-top: 30px; font-size: 0.9rem; border-left: 4px solid #4a6491; }
+    </style>
+</head>
+<body class="loading">
+
+    <div id="splash-screen">
+        <img src="图片1.jpg" alt="无限可能">
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>荧光图像批量分析工具</h1>
+        </header>
+        
+        <div class="content">
+            <div class="form-group">
+                <label for="imageFiles">1. 请选择需要处理的图片（支持 .tif, .tiff, .png, .jpg）</label>
+                <input type="file" id="imageFiles" multiple accept="image/*,.tif,.tiff">
+            </div>
+            
+            <button class="calculate-btn" id="processBtn">开始分析</button>
+            
+            <div id="status"></div>
+            <div id="errorLog" class="error-log"></div>
+
+            <div id="resultsContainer" class="results-container">
+                <h3 style="margin-bottom: 10px; color: #2c3e50; border-bottom: 2px solid #4a6491; padding-bottom: 5px;">分析结果详情</h3>
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>图片名称</th>
+                            <th>平均荧光强度</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody"></tbody>
+                </table>
+            </div>
+            
+            <div class="info-box">
+                <h3>执行逻辑说明：</h3>
+                <ul>
+                    <li><strong>底层直读：</strong> 直接解析图片底层矩阵数据，防止大文件导致崩溃。</li>
+                    <li><strong>精准测量：</strong> 仅过滤并测量提取通道亮度在 50-255 之间的像素的平均强度。</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 启动页控制脚本 ---
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                const splash = document.getElementById('splash-screen');
+                splash.style.opacity = '0';
+                document.body.classList.remove('loading');
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                }, 800); 
+            }, 2000); // 显示 2 秒
+        });
+
+        // --- 原始业务逻辑脚本 ---
+        document.getElementById('processBtn').addEventListener('click', async function() {
+            const files = document.getElementById('imageFiles').files;
+            const statusDiv = document.getElementById('status');
+            const errorLog = document.getElementById('errorLog');
+            const btn = document.getElementById('processBtn');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const resultsBody = document.getElementById('resultsBody');
+
+            if (files.length === 0) {
+                alert("请先选择图片文件！");
+                return;
+            }
+
+            btn.disabled = true;
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'processing';
+            statusDiv.innerHTML = `正在处理 ${files.length} 张图片，请稍候...`;
+            errorLog.style.display = 'none';
+            errorLog.innerHTML = '<strong>错误日志：</strong><br>';
+            resultsContainer.style.display = 'none';
+            resultsBody.innerHTML = '';
+
+            let totalMean = 0;
+            let successCount = 0;
+            let errorCount = 0;
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                try {
+                    const data = await processFile(file);
+                    const meanVal = data.mean.toFixed(3);
+                    const row = `<tr><td>${file.name}</td><td>${meanVal}</td></tr>`;
+                    resultsBody.innerHTML += row;
+                    totalMean += data.mean;
+                    successCount++;
+                } catch (err) {
+                    errorCount++;
+                    errorLog.style.display = 'block';
+                    errorLog.innerHTML += `❌ 文件 <b>${file.name}</b> 处理失败: ${err.message}<br>`;
+                }
+            }
+
+            if (successCount > 0) {
+                const avgTotal = (totalMean / successCount).toFixed(3);
+                resultsBody.innerHTML += `
+                    <tr class="summary-row"><td>统计项：成功处理图片总数</td><td>${successCount} 张</td></tr>
+                    <tr class="summary-row"><td>统计项：所有图片总平均值</td><td>${avgTotal}</td></tr>
+                `;
+                resultsContainer.style.display = 'block';
+                statusDiv.className = 'success';
+                statusDiv.innerHTML = `处理完成！成功 ${successCount} 张，失败 ${errorCount} 张。`;
+                alert(`亲爱的沙兴良先生，分析已完成！共处理 ${successCount} 张图片。`);
+            }
+            btn.disabled = false;
+        });
+
+        async function processFile(file) {
+            const isTiff = file.name.toLowerCase().match(/\.tiff?$/);
+            return isTiff ? await processGeoTiff(file) : await processStandardImage(file);
+        }
+
+        async function processGeoTiff(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const tiff = await GeoTIFF.fromArrayBuffer(arrayBuffer);
+            const image = await tiff.getImage();
+            const rasters = await image.readRasters();
+            let targetChannel = rasters.length >= 3 ? rasters[1] : rasters[0]; 
+            let area = 0, sumGreen = 0;
+            for (let i = 0; i < targetChannel.length; i++) {
+                let val = targetChannel[i];
+                if (val >= 50 && val <= 255) { area++; sumGreen += val; }
+            }
+            return { mean: area > 0 ? sumGreen / area : 0 };
+        }
+
+        function processStandardImage(file) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const url = URL.createObjectURL(file);
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width; canvas.height = img.height;
+                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                    ctx.drawImage(img, 0, 0);
+                    const pixelData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                    let area = 0, sumGreen = 0;
+                    for (let i = 0; i < pixelData.length; i += 4) {
+                        let g = pixelData[i + 1]; 
+                        if (g >= 50 && g <= 255) { area++; sumGreen += g; }
+                    }
+                    URL.revokeObjectURL(url);
+                    resolve({ mean: area > 0 ? sumGreen / area : 0 });
+                };
+                img.onerror = () => reject(new Error("读取失败"));
+                img.src = url;
+            });
+        }
+    </script>
+</body>
 </html>
